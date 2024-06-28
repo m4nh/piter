@@ -2,7 +2,7 @@ import typing as t
 from pathlib import Path
 import typer
 
-piter = typer.Typer(name="piter", pretty_exceptions_enable=False)
+piter = typer.Typer(name="piter", pretty_exceptions_enable=False, no_args_is_help=True)
 context_settings = {"allow_extra_args": True, "ignore_unknown_options": False}
 
 
