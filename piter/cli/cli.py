@@ -29,9 +29,15 @@ def images_table_simple(
 
     dataset = pls.SamplesSequence.from_underfolder(folder)
 
+    if len(dataset) == 0:
+        print("No images found in the folder")
+        return
+
     if len(keys) > 0:
         stage = pst.StageKeysFilter(key_list=keys)
         dataset = dataset.map(stage)
+    else:
+        keys = list(sorted(dataset[0].keys()))
 
     def get_image_url(item: pli.ImageItem):
         if not embed:
@@ -46,14 +52,11 @@ def images_table_simple(
             or isinstance(item, pli.PngImageItem)
         )
 
-    final_keys = set()
     batches = []
     for sample in track(dataset, total=len(dataset), description="Processing"):
-        sample_keys = sample.keys()
         batch = {}
-        for key in sample_keys:
+        for key in keys:
             if is_valid_image(sample[key]):
-                final_keys.add(key)
                 batch[key] = get_image_url(sample[key])
         batches.append(batch)
 
@@ -61,7 +64,7 @@ def images_table_simple(
     output = renderer.render(
         ImagesTableSimpleParams(
             title="Images Table",
-            keys=list(final_keys),
+            keys=keys,
             images=batches,
         )
     )
