@@ -1,0 +1,45 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "piter"
+authors = [{ name = "Eyecan.ai", email = "daniele.degregorio@eyecan.ai" }]
+description = "PITER: PIpelime TEmplate Renderer"
+readme = "README.md"
+license = { text = "Proprietary License" }
+requires-python = ">=3.8"
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "Intended Audience :: Science/Research",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "License :: Other/Proprietary License",
+  "Natural Language :: English",
+  "Operating System :: OS Independent",
+  "Topic :: Scientific/Engineering",
+  "Topic :: Software Development",
+]
+keywords = ["pipelime", "data", "html", "template", "images"]
+dependencies = ["pipelime-python>=1.4.1,!=1.6.1"]
+dynamic = ["version"]
+
+[project.optional-dependencies]
+tests = ["pytest", "pytest-cov"]
+docs = [
+  "Sphinx==5.1.1",
+  "sphinx-immaterial==0.11.3",
+  "myst-parser==0.18.0",
+  "sphinxcontrib-mermaid==0.7.1",
+]
+dev = ["pylama", "black", "flake8"]
+build = ["hatch", "build"]
+
+[project.scripts]
+piter = "piter.cli.cli:piter"
+
+[tool.hatch.version]
+path = "piter/__init__.py"
