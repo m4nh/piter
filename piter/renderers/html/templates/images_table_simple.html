@@ -21,34 +21,52 @@
 <!-- body -->
 {% block body %}
 <div
-  class="rounded shadow-xl fixed right-0 bottom-0 bg-stone-900 origin-bottom z-[1] p-2 text-lg"
+  class="rounded shadow-xl fixed right-0 bottom-0 origin-bottom z-[1] p-2 text-lg"
 >
   {% for key in keys %}
   <button
-    class="border rounded p-2 text-stone-200 text-black font-mono text-center py-1 button-{{ key }}"
+    class="btn btn-xs  button-{{ key }}"
     onclick="toggleColumn('{{ key }}')"
   >
     {{ key }}
   </button>
   {% endfor %}
 </div>
-<div class="bg-stone-900 overflow-x-auto">
+<div class="overflow-x-auto">
   <div class="flex flex-col items-start gap-1">
-    {% for image in images %}
-    <div class="grid grid-flow-col auto-cols-max gap-1">
+    <!-- IMAGES -->
+    {% for image,metadata in zip(images,metadatas) %}
+    <div class="grid grid-flow-col auto-cols-max gap-1 shadow-xl mb-4 p-4">
+      <!-- IMAGES -->
       {% for key in keys %}
-      <div class="column-{{ key }} relative hover:scale-105">
-        <div
-          class="bg-stone-800 text-stone-200 text-black font-mono text-xs text-center py-1"
-        >
-          {{ key }}
-        </div>
+      <div class="column-{{ key }} relative">
+        <div class="font-mono text-xs text-center py-1">{{ key }}</div>
         <img src="{{ image[key] }}" class="h-64" />
+      </div>
+      {% endfor %}
+
+      <!-- METADATA -->
+      {% for mkey in mkeys %}
+      <div class="column-{{ mkey }} relative">
+        <div class="font-mono text-xs text-center py-1">{{ mkey }}</div>
+        <!-- metadata[mkeys] is a dictionary of <str,str>, print all elements -->
+        <div class="flex flex-col gap-1 p-2">
+          {% for key, value in metadata[mkey].items() %}
+          <div class="grid grid-cols-12 gap-2">
+            <div class="col-span-6">
+              <div class="badge badge-primary w-full">{{ key }}</div>
+            </div>
+            <div class="col-span-6">
+              <div class="badge badge-secondary w-full">{{ value }}</div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
       </div>
       {% endfor %}
     </div>
     {% endfor %}
   </div>
-</div>
 
-{% endblock body %}
+  {% endblock body %}
+</div>

@@ -4,6 +4,7 @@ import io
 import base64
 import typing as t
 import colour
+import pathlib as pl
 
 
 def numpy_to_base64_url(
@@ -28,7 +29,8 @@ def numpy_to_base64_url(
     return data_url
 
 
-def image_file_to_base64_url(image_path: str, quality: int = 70):
+def image_file_to_base64_url(image_path: t.Union[str, pl.Path], quality: int = 70):
+    image_path = str(image_path)
     image = Image.open(image_path)
     extension = image_path.split(".")[-1]
     return numpy_to_base64_url(np.array(image), quality=quality, extension=extension)

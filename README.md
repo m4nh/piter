@@ -1,21 +1,19 @@
-# piter
+# PITER - PIpelime TEmplate Rendering
 
-[![PyPI - Version](https://img.shields.io/pypi/v/piter.svg)](https://pypi.org/project/piter)
-[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/piter.svg)](https://pypi.org/project/piter)
+<img src='docs/images/logo.jpg' height=256 />
 
------
-
-**Table of Contents**
-
-- [Installation](#installation)
-- [License](#license)
+PIPELIME -> HTML Pages
 
 ## Installation
 
 ```console
-pip install piter
+pip install -e .
 ```
 
-## License
+## Examples
 
-`piter` is distributed under the terms of the [MIT](https://spdx.org/licenses/MIT.html) license.
+Given a Pipelime dataset (***$INPUT_DATASET***) with several image items (***image***, ***image1***, ***image2***), launch:
+
+```
+piter images_table_simple --folder $INPUT_DATASET --keys image --keys image1 --keys image2 --title "My Cool Report!" --output-file /tmp/myreport.html
+```

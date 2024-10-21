@@ -23,14 +23,16 @@ def image2base64(
 
 @piter.command("images_table_simple", context_settings=context_settings)
 def images_table_simple(
+    title: str = typer.Option("Images Table", help="Title of the HTML file"),
     folder: Path = typer.Option(..., help="Input Underfolder path"),
     keys: t.List[str] = typer.Option([], help="List of image keys"),
+    mkeys: t.List[str] = typer.Option([], help="List of metadata keys"),
     embed: bool = typer.Option(False, help="Embed images in the HTML file"),
     embed_quality: int = typer.Option(50, help="Embed quality"),
     output_file: str = typer.Option("", help="Output HTML file"),
 ) -> None:
     from piter.renderers.html import ImagesTableSimpleParams, ImagesTableSimple
-    from piter.utils.images import numpy_to_base64_url
+    from piter.utils.images import numpy_to_base64_url, image_file_to_base64_url
     import tempfile
     import pipelime.sequences as pls
     import pipelime.stages as pst
@@ -44,7 +46,7 @@ def images_table_simple(
         return
 
     if len(keys) > 0:
-        stage = pst.StageKeysFilter(key_list=keys)
+        stage = pst.StageKeysFilter(key_list=keys + mkeys)
         dataset = dataset.map(stage)
     else:
         keys = list(sorted(dataset[0].keys()))
@@ -53,7 +55,8 @@ def images_table_simple(
         if not embed:
             return str(item.local_sources[0])
         else:
-            return numpy_to_base64_url(item(), quality=embed_quality)
+            # return numpy_to_base64_url(item(), quality=embed_quality)
+            return image_file_to_base64_url(item.local_sources[0], embed_quality)
 
     def is_valid_image(item):
         return (
@@ -62,20 +65,45 @@ def images_table_simple(
             or isinstance(item, pli.PngImageItem)
         )
 
+    def is_valid_metadata(item):
+        return isinstance(item, pli.MetadataItem)
+
+    def purge_metadata(item):
+        output_metadata = {}
+        for key, value in item.items():
+            if isinstance(value, float):
+                output_metadata[key] = f"{value:.4f}"
+            else:
+                output_metadata[key] = str(value)
+
+        return output_metadata
+
     batches = []
+    mbatches = []
     for sample in track(dataset, total=len(dataset), description="Processing"):
+
+        # Add images in the batch
         batch = {}
         for key in keys:
             if is_valid_image(sample[key]):
                 batch[key] = get_image_url(sample[key])
         batches.append(batch)
 
+        # Add metadatas in the batch
+        mbatch = {}
+        for mkey in mkeys:
+            if is_valid_metadata(sample[mkey]):
+                mbatch[mkey] = purge_metadata(sample[mkey]())
+        mbatches.append(mbatch)
+
     renderer = ImagesTableSimple()
     output = renderer.render(
         ImagesTableSimpleParams(
-            title="Images Table",
+            title=title,
             keys=keys,
             images=batches,
+            mkeys=mkeys,
+            metadatas=mbatches,
         )
     )
 
@@ -91,6 +119,7 @@ def images_table_simple(
 
 @piter.command("images_clusters_simple", context_settings=context_settings)
 def images_clusters_simple(
+    title: str = typer.Option("Images Clusters", help="Title of the HTML file"),
     folder: Path = typer.Option(..., help="Input Underfolder path"),
     image_key: str = typer.Option("image", help="Image key"),
     label_key: str = typer.Option(
@@ -161,7 +190,9 @@ def images_clusters_simple(
     renderer = ImagesClustersSimple()
     output = renderer.render(
         ImagesClustersSimpleParams(
-            title="Images Clusters", images_clusters=clusters, labels_colors=colors
+            title=title,
+            images_clusters=clusters,
+            labels_colors=colors,
         )
     )
 
