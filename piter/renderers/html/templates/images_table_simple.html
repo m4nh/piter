@@ -1,57 +1,54 @@
-<!-- image_table_template.html -->
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{{ title }}</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script lang="javascript">
+{% extends "_base.html" %}
 
+<!-- user script -->
+{% block user_script %}
+<script lang="javascript">
 
-      function toggleColumn(column) {
-        const elements = document.querySelectorAll(`.column-${column}`);
-        elements.forEach((element) => {
-          element.classList.toggle("hidden");
-        });
+  function toggleColumn(column) {
+    const elements = document.querySelectorAll(`.column-${column}`);
+    elements.forEach((element) => {
+      element.classList.toggle("hidden");
+    });
 
-        const buttons = document.querySelectorAll(`.button-${column}`);
-        buttons.forEach((button) => {
-          button.classList.toggle("opacity-20");
-        });
-      }
-    </script>
-  </head>
-  <body>
-    <div
-      class="rounded shadow-xl fixed right-0 bottom-0 bg-stone-900 origin-bottom z-[1] p-2 text-lg"
-    >
+    const buttons = document.querySelectorAll(`.button-${column}`);
+    buttons.forEach((button) => {
+      button.classList.toggle("opacity-20");
+    });
+  }
+</script>
+{% endblock user_script %}
+
+<!-- body -->
+{% block body %}
+<div
+  class="rounded shadow-xl fixed right-0 bottom-0 bg-stone-900 origin-bottom z-[1] p-2 text-lg"
+>
+  {% for key in keys %}
+  <button
+    class="border rounded p-2 text-stone-200 text-black font-mono text-center py-1 button-{{ key }}"
+    onclick="toggleColumn('{{ key }}')"
+  >
+    {{ key }}
+  </button>
+  {% endfor %}
+</div>
+<div class="bg-stone-900 overflow-x-auto">
+  <div class="flex flex-col items-start gap-1">
+    {% for image in images %}
+    <div class="grid grid-flow-col auto-cols-max gap-1">
       {% for key in keys %}
-      <button
-        class="border rounded p-2 text-stone-200 text-black font-mono text-center py-1 button-{{ key }}"
-        onclick="toggleColumn('{{ key }}')"
-      >
-        {{ key }}
-      </button>
+      <div class="column-{{ key }} relative hover:scale-105">
+        <div
+          class="bg-stone-800 text-stone-200 text-black font-mono text-xs text-center py-1"
+        >
+          {{ key }}
+        </div>
+        <img src="{{ image[key] }}" class="h-64" />
+      </div>
       {% endfor %}
     </div>
-    <div class="bg-stone-900 overflow-x-auto">
-      <div class="flex flex-col items-start gap-1">
-        {% for image in images %}
-        <div class="grid grid-flow-col auto-cols-max gap-1">
-          {% for key in keys %}
-          <div class="column-{{ key }} relative hover:scale-105">
-            <div
-              class="bg-stone-800 text-stone-200 text-black font-mono text-xs text-center py-1"
-            >
-              {{ key }}
-            </div>
-            <img src="{{ image[key] }}" class="h-64" />
-          </div>
-          {% endfor %}
-        </div>
-        {% endfor %}
-      </div>
-    </div>
-  </body>
-</html>
+    {% endfor %}
+  </div>
+</div>
+
+{% endblock body %}

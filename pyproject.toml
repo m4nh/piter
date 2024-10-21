@@ -24,7 +24,7 @@ classifiers = [
   "Topic :: Software Development",
 ]
 keywords = ["pipelime", "data", "html", "template", "images"]
-dependencies = ["pipelime-python>=1.4.1,!=1.6.1"]
+dependencies = ["pipelime-python>=1.4.1,!=1.6.1", "jinja2", "colour", "imageio"]
 dynamic = ["version"]
 
 [project.optional-dependencies]

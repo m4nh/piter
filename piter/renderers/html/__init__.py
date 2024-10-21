@@ -10,7 +10,8 @@ def templates_path() -> pl.Path:
 
 
 class TemplatesCollection:
-    IMAGES_TABLE_SIMPLE = templates_path() / 'images_table_simple.html'
+    IMAGES_TABLE_SIMPLE = 'images_table_simple.html'
+    IMAGES_CLUSTERS_SIMPLE = 'images_clusters_simple.html'
 
 
 Params = t.TypeVar('Params')
@@ -23,10 +24,12 @@ class HTMLRenderer(pyd.BaseModel, t.Generic[Params]):
         with open(str(self.template_path), 'r') as file:
             content = file.read()
         return Template(content)
-
+    
     def render(self, data: Params) -> str:
-        template = self._build_template()
-        return template.render(data.dict())
+        env = Environment(loader=FileSystemLoader(templates_path()))
+        return env.get_template(self.template_path).render(data.dict())
+        # template = self._build_template()
+        # return template.render(data.dict())
 
 
 class ImagesTableSimpleParams(pyd.BaseModel):
@@ -37,3 +40,12 @@ class ImagesTableSimpleParams(pyd.BaseModel):
 
 class ImagesTableSimple(HTMLRenderer[ImagesTableSimpleParams]):
     template_path: str = TemplatesCollection.IMAGES_TABLE_SIMPLE
+
+
+class ImagesClustersSimpleParams(pyd.BaseModel):
+    title: str = 'Images Clusters'
+    images_clusters: t.Dict[int, t.List[str]]
+    labels_colors: t.Optional[t.Dict[int, str]] = None
+
+class ImagesClustersSimple(HTMLRenderer[ImagesClustersSimpleParams]):
+    template_path: str = TemplatesCollection.IMAGES_CLUSTERS_SIMPLE
