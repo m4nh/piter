@@ -3,14 +3,47 @@
 <!-- user script -->
 {% block user_script %}
 <script lang="ts">
-  function test() {
-    alert("Hello World");
+  let resize = 1.0;
+
+  function updateResizables() {
+    document.querySelectorAll(".resizable").forEach((el) => {
+      el.style.height = `${8 * resize}rem`;
+    });
+  }
+
+  function zoomIn() {
+    resize += 0.1;
+    updateResizables();
+  }
+
+  function zoomOut() {
+    resize -= 0.1;
+    updateResizables();
+  }
+
+  function resetZoom() {
+    resize = 1.0;
+    updateResizables();
   }
 </script>
 {% endblock user_script %}
 
 <!-- body -->
 {% block body %}
+
+<div
+  class="rounded shadow-xl fixed right-0 bottom-0 origin-bottom z-[1] p-2 text-lg"
+>
+  <button class="btn btn-xs  button-{{ key }}" onclick="zoomOut()">
+    Zoom [-]
+  </button>
+  <button class="btn btn-xs  button-{{ key }}" onclick="resetZoom()">
+    Reset
+  </button>
+  <button class="btn btn-xs  button-{{ key }}" onclick="zoomIn()">
+    Zoom [+]
+  </button>
+</div>
 
 <div>
   <div class="flex flex-col gap-10">
@@ -31,7 +64,7 @@
           <div class="shadow">
             <img
               src="{{ image }}"
-              class="h-32 border-b-4 hover:border-b-0 border-[{{ labels_colors[key] }}] hover:scale-110 transition-all"
+              class="resizable h-[8rem] border-b-4 hover:border-b-0 border-[{{ labels_colors[key] }}] hover:scale-110 transition-all"
             />
           </div>
           {% endfor %}
