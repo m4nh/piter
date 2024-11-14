@@ -3,10 +3,15 @@ import pathlib as pl
 import pydantic as pyd
 from jinja2 import Environment, FileSystemLoader, Template
 import typing as t
+import datetime
 
 
 def templates_path() -> pl.Path:
     return pl.Path(__file__).parent / "templates"
+
+
+class GlobalParams(pyd.BaseSettings):
+    footnotes: str = "Eyecan ® - " + str(datetime.datetime.now().year)
 
 
 class TemplatesCollection:
@@ -32,19 +37,20 @@ class HTMLRenderer(pyd.BaseModel, t.Generic[Params]):
         # return template.render(data.dict())
 
 
-class ImagesTableSimpleParams(pyd.BaseModel):
+class ImagesTableSimpleParams(GlobalParams):
     title: str = "Images Table"
     keys: t.List[str] = []
     images: t.List[t.Dict[str, str]]
     mkeys: t.List[str] = []
     metadatas: t.List[t.Dict[str, t.Mapping[str, t.Any]]] = []
+    show_indices: bool = True
 
 
 class ImagesTableSimple(HTMLRenderer[ImagesTableSimpleParams]):
     template_path: str = TemplatesCollection.IMAGES_TABLE_SIMPLE
 
 
-class ImagesClustersSimpleParams(pyd.BaseModel):
+class ImagesClustersSimpleParams(GlobalParams):
     title: str = "Images Clusters"
     images_clusters: t.Dict[int, t.List[str]]
     labels_colors: t.Optional[t.Dict[int, str]] = None

@@ -125,12 +125,13 @@ def images_clusters_simple(
     label_key: str = typer.Option(
         "metadata.label", help="Label key [dot notation for nested keys]"
     ),
+    color_key: str = typer.Option("", help="Color key"),
     embed: bool = typer.Option(False, help="Embed images in the HTML file"),
     embed_quality: int = typer.Option(50, help="Embed quality"),
     output_file: str = typer.Option("", help="Output HTML file"),
 ) -> None:
     from piter.renderers.html import ImagesClustersSimpleParams, ImagesClustersSimple
-    from piter.utils.images import numpy_to_base64_url, label_to_color
+    from piter.utils.images import numpy_to_base64_url, label_to_color, color_rgb_to_hex
     import tempfile
     import pipelime.sequences as pls
     import pipelime.stages as pst
@@ -140,9 +141,13 @@ def images_clusters_simple(
     dataset = pls.SamplesSequence.from_underfolder(folder)
 
     # Check if the label key is nested or not
-    is_label_in_metadata = "." in label_key
+    is_nested_label = "." in label_key
     label_item = label_key.split(".")[0]
-    label_subitem = ".".join(label_key.split(".")[1:]) if is_label_in_metadata else None
+    label_subitem = ".".join(label_key.split(".")[1:]) if is_nested_label else None
+
+    is_nested_color = "." in color_key
+    color_item = color_key.split(".")[0]
+    color_subitem = ".".join(color_key.split(".")[1:]) if is_nested_color else None
 
     if len(dataset) == 0:
         print("No images found in the folder")
@@ -170,14 +175,18 @@ def images_clusters_simple(
 
         image = sample[image_key]
         label = sample[label_item]()
-        if is_label_in_metadata:
+        if is_nested_label:
             label = label[label_subitem]
 
         if label not in clusters:
             clusters[label] = []
 
         if label not in colors:
-            colors[label] = label_to_color(label, format="hex")
+            if len(color_key) > 0:
+                color = sample[color_item]()[color_subitem]
+                colors[label] = color_rgb_to_hex(color)
+            else:
+                colors[label] = label_to_color(label, format="hex")
 
         # assert label is valid number
         try:

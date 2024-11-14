@@ -36,7 +36,17 @@
   <div class="flex flex-col items-start gap-1">
     <!-- IMAGES -->
     {% for image,metadata in zip(images,metadatas) %}
-    <div class="grid grid-flow-col auto-cols-max gap-1 shadow-xl mb-4 p-4">
+    <div class="grid grid-flow-col auto-cols-max gap-1 shadow-xl mb-2">
+      {% if show_indices %}
+      <div class="column--id relative h-full w-8">
+        <div
+          class="-rotate-90 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-xs"
+        >
+          {{loop.index}}
+        </div>
+      </div>
+      {% endif %}
+
       <!-- IMAGES -->
       {% for key in keys %}
       <div class="column-{{ key }} relative">

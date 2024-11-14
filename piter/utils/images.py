@@ -83,3 +83,12 @@ def label_to_color(
         return rgb + (255,)
     elif format == "hex":
         return colour.rgb2hex(rgb)
+
+
+def color_rgb_to_hex(color: t.Union[t.Tuple[int, int, int], t.List[int]]) -> str:
+    c = colour.Color()
+    r = color[0] / 255
+    g = color[1] / 255
+    b = color[2] / 255
+    c.set_rgb([r, g, b])
+    return c.hex
