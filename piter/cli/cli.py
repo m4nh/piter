@@ -7,8 +7,8 @@ context_settings = {"allow_extra_args": True, "ignore_unknown_options": False}
 
 
 @piter.command("check", context_settings=context_settings)
-def check() -> None:
-    print("Check ok!")
+def check(name: str = typer.Option(..., help="Name of the person to greet")) -> None:
+    print(f"Hello {name}")
 
 
 @piter.command("image2base64", context_settings=context_settings)
