@@ -43,6 +43,7 @@ class ImagesTableSimpleParams(GlobalParams):
     images: t.List[t.Dict[str, str]]
     mkeys: t.List[str] = []
     metadatas: t.List[t.Dict[str, t.Mapping[str, t.Any]]] = []
+    group_size: t.Optional[int] = None
     show_indices: bool = True
 
 

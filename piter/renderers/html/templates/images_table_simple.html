@@ -16,6 +16,8 @@
     });
   }
 </script>
+
+
 {% endblock user_script %}
 
 <!-- body -->
@@ -75,6 +77,9 @@
       </div>
       {% endfor %}
     </div>
+    {% if group_size and (loop.index % group_size == 0) and not loop.last %}
+    <div class="group-divider w-full border-b shadow-xl mb-4 h-8 border-dashed border-stone-400"></div>
+    {% endif %}
     {% endfor %}
   </div>
 

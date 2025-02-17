@@ -57,6 +57,9 @@ def images_table_simple(
     mkeys: t.List[str] = typer.Option(
         [], help="A list of keys to identify metadata in the dataset"
     ),
+    divide_each: int = typer.Option(
+        -1, help="The number of images to display in each row"
+    ),
     embed: bool = typer.Option(
         False, help="Whether to embed images directly in the HTML file"
     ),
@@ -121,6 +124,7 @@ def images_table_simple(
             images=batches,
             mkeys=mkeys,
             metadatas=mbatches,
+            group_size=divide_each if divide_each > 0 else None,
         )
     )
 
