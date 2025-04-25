@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 import pathlib as pl
 import pydantic as pyd
+from pydantic_settings import BaseSettings
 from jinja2 import Environment, FileSystemLoader, Template
 import typing as t
 import datetime
@@ -10,7 +11,7 @@ def templates_path() -> pl.Path:
     return pl.Path(__file__).parent / "templates"
 
 
-class GlobalParams(pyd.BaseSettings):
+class GlobalParams(BaseSettings):
     footnotes: str = "Eyecan ® - " + str(datetime.datetime.now().year)
 
 
