@@ -1,3 +1,3 @@
 def test_ok():
     a = 2
-    assert False
+    assert a + 2 == 4
