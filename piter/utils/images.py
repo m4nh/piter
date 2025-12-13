@@ -91,4 +91,4 @@ def color_rgb_to_hex(color: t.Union[t.Tuple[int, int, int], t.List[int]]) -> str
     g = color[1] / 255
     b = color[2] / 255
     c.set_rgb([r, g, b])
-    return c.hex
+    return c.get_hex_l()
