@@ -15,7 +15,7 @@ jobs:
           name: Run pytests with coverage
           command: | 
             mkdir test-results
-            pytest --cov=your_package --cov-fail-under=80 --junitxml=test-results/junit.xml
+            pytest --cov=piter --cov-fail-under=80 --junitxml=test-results/junit.xml
   test_3_9:
     docker:
       - image: cimg/python:3.9.18
@@ -30,7 +30,7 @@ jobs:
           name: Run pytests with coverage
           command: | 
             mkdir test-results
-            pytest --cov=your_package --cov-fail-under=80 --junitxml=test-results/junit.xml
+            pytest --cov=piter --cov-fail-under=80 --junitxml=test-results/junit.xml
   test_3_11:
     docker:
       - image: cimg/python:3.11.10
@@ -45,7 +45,7 @@ jobs:
           name: Run pytests with coverage
           command: | 
             mkdir test-results
-            pytest --cov=your_package --cov-fail-under=80 --junitxml=test-results/junit.xml
+            pytest --cov=piter --cov-fail-under=80 --junitxml=test-results/junit.xml
 workflows:
   test-workflow:
     jobs:
