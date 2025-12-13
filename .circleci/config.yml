@@ -16,32 +16,9 @@ jobs:
           command: | 
             mkdir test-results
             pytest --cov=piter --cov-fail-under=80 --junitxml=test-results/junit.xml
-  simulate:
-    docker:
-      - image: cimg/python:3.12.12
-    environment:
-      PACKAGE_NAME: piter
-    steps:
-      - checkout
-      - run:
-          name: Install 
-          command: |
-            python -m pip install --upgrade pip
-            pip install -e .
-      - run:
-          name: Compute Version
-          command: |
-            PKG_VER=$(python -c "import importlib.metadata as m; print(m.version('${PACKAGE_NAME}'))")
-            echo "export IMAGE_TAG=${PKG_VER}" >> $BASH_ENV
-      - run:
-          name: Simulate push
-          command: |
-            echo "Pushing image with tag: $PACKAGE_NAME:${IMAGE_TAG}"
+  
       
 workflows:
   test-workflow:
     jobs:
       - test
-      - simulate:
-          requires:
-            - test
