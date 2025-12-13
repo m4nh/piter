@@ -1,7 +1,7 @@
 version: 2.1 #reopen
 
 jobs:
-  test_3_12:
+  test:
     docker:
       - image: cimg/python:3.12.12
     steps:
@@ -16,39 +16,27 @@ jobs:
           command: | 
             mkdir test-results
             pytest --cov=piter --cov-fail-under=80 --junitxml=test-results/junit.xml
-  test_3_9:
+  simulate:
     docker:
-      - image: cimg/python:3.9.18
+      - image: cimg/python:3.12.12
+    environment:
+      PACKAGE_NAME: piter
     steps:
       - checkout
       - run:
-          name: Install dependencies
+          name: Compute Version
           command: |
-            python -m pip install --upgrade pip
-            pip install -e .[tests]
+            PKG_VER=$(python -c "import importlib.metadata as m; print(m.version('${PACKAGE_NAME}'))")
+            echo "export IMAGE_TAG=${PKG_VER}" >> $BASH_ENV
       - run:
-          name: Run pytests with coverage
-          command: | 
-            mkdir test-results
-            pytest --cov=piter --cov-fail-under=80 --junitxml=test-results/junit.xml
-  test_3_11:
-    docker:
-      - image: cimg/python:3.11.10
-    steps:
-      - checkout
-      - run:
-          name: Install dependencies
+          name: Simulate push
           command: |
-            python -m pip install --upgrade pip
-            pip install -e .[tests]
-      - run:
-          name: Run pytests with coverage
-          command: | 
-            mkdir test-results
-            pytest --cov=piter --cov-fail-under=80 --junitxml=test-results/junit.xml
+            echo "Pushing image with tag: $PACKAGE_NAME:${IMAGE_TAG}"
+      
 workflows:
   test-workflow:
     jobs:
-      - test_3_9
-      - test_3_11
-      - test_3_12
+      - test:
+      - simulate:
+          requires:
+            - test
