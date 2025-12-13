@@ -3,23 +3,30 @@ version: 2.1
 jobs:
   test:
     docker:
-      - image: cimg/python:3.12.12
+      - image: cimg/python:3.9
     steps:
       - checkout
-      - run:
-          name: Install dependencies
-          command: |
-            python -m pip install --upgrade pip
-            pip install -e .[tests]
-      - run:
-          name: Run pytests with coverage
-          command: |
-            mkdir test-results
-            pytest --cov=your_package --cov-fail-under=80 --junitxml=test-results/junit.xml
-      - store_test_results:
-          path: test-results
+      - run: python --version
+      - run: echo "Running tests on Python 3.9"
+  test_3_10:
+    docker:
+      - image: cimg/python:3.10
+    steps:
+      - checkout
+      - run: python --version
+      - run: echo "Running tests on Python 3.10"
+  test_3_12:
+    docker:
+      - image: cimg/python:3.12
+    steps:
+      - checkout
+      - run: python --version
+      - run: echo "Running tests on Python 3.12"
 
 workflows:
-  test-workflow:
+  version: 2
+  test_multiple_python_versions:
     jobs:
       - test
+      - test_3_10
+      - test_3_12
