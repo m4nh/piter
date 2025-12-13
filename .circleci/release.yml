@@ -19,9 +19,16 @@ jobs:
   build_and_push:
     docker:
       - image: cimg/python:3.12.12
-    environment:
-      PACKAGE_NAME: piter
     steps:
+      - run:
+          name: Check environment
+          command: |
+            source $BASH_ENV
+
+            if [ -z "${PACKAGE_NAME:-}" ]; then
+              echo "PACKAGE_NAME is not set" >&2
+              exit 1
+            fi
       - checkout
       - run:
           name: Install 
