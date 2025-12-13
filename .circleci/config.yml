@@ -7,21 +7,21 @@ jobs:
     steps:
       - checkout
       - run: python --version
-      - run: echo "Running tests on Python 3.9"
+      - run: &myrun echo "Running tests on Python 3.9"
   test_3_10:
     docker:
       - image: cimg/python:3.10
     steps:
       - checkout
       - run: python --version
-      - run: echo "Running tests on Python 3.10"
+      - run: *myrun
   test_3_12:
     docker:
       - image: cimg/python:3.12
     steps:
       - checkout
       - run: python --version
-      - run: echo "Running tests on Python 3.12"
+      - run: *myrun
 
 workflows:
   version: 2
