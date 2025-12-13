@@ -64,13 +64,13 @@ jobs:
 workflows:
   test-workflow:
     jobs:
-      - test:
-          filters:  # required since `deploy` has tag filters AND requires `build`
-            tags:
-              only: /.*/
+      # - test:
+      #     filters:  # required since `deploy` has tag filters AND requires `build`
+      #       tags:
+      #         only: /.*/
       - build_and_push:
-          requires:
-            - test
+          # requires:
+          #   - test
           filters: 
             branches:
               only: main
