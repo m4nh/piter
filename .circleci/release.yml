@@ -15,7 +15,7 @@ jobs:
           name: Run pytests with coverage
           command: | 
             mkdir test-results
-            pytest --cov=piter --cov-fail-under=80 --junitxml=test-results/junit.xml
+            pytest --cov=${PACKAGE_NAME} --cov-fail-under=80 --junitxml=test-results/junit.xml
   build_and_push:
     docker:
       - image: cimg/python:3.12.12
@@ -23,8 +23,6 @@ jobs:
       - run:
           name: Check environment
           command: |
-            source $BASH_ENV
-
             if [ -z "${PACKAGE_NAME:-}" ]; then
               echo "PACKAGE_NAME is not set" >&2
               exit 1
