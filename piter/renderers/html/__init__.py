@@ -20,7 +20,11 @@ class TemplatesCollection:
     IMAGES_CLUSTERS_SIMPLE = "images_clusters_simple.html"
 
 
-Params = t.TypeVar("Params")
+class _HasDict(t.Protocol):
+    def dict(self) -> t.Dict[str, t.Any]: ...
+
+
+Params = t.TypeVar("Params", bound=_HasDict)
 
 
 class HTMLRenderer(pyd.BaseModel, t.Generic[Params]):
