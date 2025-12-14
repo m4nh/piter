@@ -85,16 +85,17 @@ jobs:
 workflows:
   test-workflow:
     jobs:
-      notify
-      # - test:
-      #     filters:  # required since `deploy` has tag filters AND requires `build`
-      #       tags:
-      #         only: /.*/
-      # - build_and_push:
-      #     # requires:
-      #     #   - test
-      #     filters: 
-      #       branches:
-      #         only: main
-      #       tags:
-      #         only: /^v.*/
+      - notify
+
+# - test:
+#     filters:  # required since `deploy` has tag filters AND requires `build`
+#       tags:
+#         only: /.*/
+# - build_and_push:
+#     # requires:
+#     #   - test
+#     filters: 
+#       branches:
+#         only: main
+#       tags:
+#         only: /^v.*/
