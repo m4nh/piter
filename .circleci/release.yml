@@ -28,35 +28,18 @@ jobs:
           root: .
           paths:
             - package_version.txt
-  notify:
-    docker:
-      - image: cimg/base:current
-    steps:
-      - attach_workspace:
-          at: .
-      - run:
-          name: Read Package Version
-          command: |
-            export VERSION=$(cat package_version.txt)
-            echo "PACKAGE_VERSION=${VERSION}" >> $BASH_ENV
-      - slack/notify:
-          custom: |
-            {
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "New CI/CD Generic *message* :art: for ${PACKAGE_NAME} -> *${PACKAGE_VERSION}* :tada:"
-                  }
-                }
-              ]
-            }
-          event: always
+  
   test:
     docker:
       - image: cimg/python:3.12.12
     steps:
+      - run:
+          name: Check environment
+          command: |
+            if [ -z "${PACKAGE_NAME:-}" ]; then
+              echo "PACKAGE_NAME is not set" >&2
+              exit 1
+            fi
       - checkout
       - run:
           name: Install dependencies
@@ -72,13 +55,6 @@ jobs:
     docker:
       - image: cimg/python:3.12.12
     steps:
-      - run:
-          name: Check environment
-          command: |
-            if [ -z "${PACKAGE_NAME:-}" ]; then
-              echo "PACKAGE_NAME is not set" >&2
-              exit 1
-            fi
       - checkout
       - run:
           name: Install 
@@ -86,10 +62,10 @@ jobs:
             python -m pip install --upgrade pip
             pip install -e .
       - run:
-          name: Compute Version
+          name: Read Package Version
           command: |
-            PKG_VER=$(python -c "import importlib.metadata as m; print(m.version('${PACKAGE_NAME}'))")
-            echo "export IMAGE_TAG=${PKG_VER}" >> $BASH_ENV
+            export VERSION=$(cat package_version.txt)
+            echo "PACKAGE_VERSION=${VERSION}" >> $BASH_ENV
       - setup_remote_docker
       - run:
           name: Build and Push Docker image
@@ -112,6 +88,38 @@ jobs:
             echo "Pushing ${IMAGE}"
             docker push "${IMAGE}"
 
+            echo ${IMAGE} > docker_image.txt
+      - persist_to_workspace:
+          root: .
+          paths:
+            - docker_image.txt
+  notify:
+    docker:
+      - image: cimg/base:current
+    steps:
+      - attach_workspace:
+          at: .
+      - run:
+          name: Read Package Version
+          command: |
+            export VERSION=$(cat package_version.txt)
+            export DOCKER_IMAGE=$(cat docker_image.txt)
+            echo "PACKAGE_VERSION=${VERSION}" >> $BASH_ENV
+            echo "DOCKER_IMAGE=${DOCKER_IMAGE}" >> $BASH_ENV
+      - slack/notify:
+          custom: |
+            {
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": ":tag: ${PACKAGE_NAME} got a new version -> *${PACKAGE_VERSION}* \n :white_check_mark: all tests passed! \n New Docker Image: `${DOCKER_IMAGE}`"
+                  }
+                }
+              ]
+            }
+          event: always
       
 workflows:
   send-notification:
@@ -120,13 +128,25 @@ workflows:
           filters: 
             tags:
               only: /v.*/
+      - test:
+          filters:  
+            tags:
+              only: /v.*/
+          requires:
+            - compute_version
+      - build_and_push:
+          filters:  
+            tags:
+              only: /v.*/
+          requires:
+            - compute_version
       - notify:
           context: slack-secrets
           filters:  
             tags:
               only: /v.*/
           requires:
-            - compute_version
+            - build_and_push
 
 
 # - test:
