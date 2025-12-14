@@ -83,9 +83,12 @@ jobs:
 
       
 workflows:
-  build-and-notify:
+  send-notification:
     jobs:
-      - notify
+      - notify:
+          filters:  # required since `deploy` has tag filters AND requires `build`
+            tags:
+              only: /v.*/
 
 # - test:
 #     filters:  # required since `deploy` has tag filters AND requires `build`
