@@ -114,7 +114,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": ":tag: ${PACKAGE_NAME} got a new version -> *${PACKAGE_VERSION}* \n :white_check_mark: all tests passed! \n New Docker Image: `${DOCKER_IMAGE}`"
+                    "text": ":tag: ${PACKAGE_NAME} got a new version -> *${PACKAGE_VERSION}* \n :white_check_mark: all tests passed! \n New Docker Image: ${DOCKER_IMAGE}"
                   }
                 }
               ]
@@ -139,7 +139,7 @@ workflows:
             tags:
               only: /v.*/
           requires:
-            - compute_version
+            - test
       - notify:
           context: slack-secrets
           filters:  
