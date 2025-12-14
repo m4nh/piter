@@ -86,6 +86,7 @@ workflows:
   send-notification:
     jobs:
       - notify:
+          context: slack-secrets
           filters:  # required since `deploy` has tag filters AND requires `build`
             tags:
               only: /v.*/
