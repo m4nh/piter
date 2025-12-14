@@ -72,9 +72,9 @@ jobs:
     docker:
       - image: cimg/python:3.12.12
     steps:
+      - checkout
       - attach_workspace:
           at: .
-      - checkout
       - run:
           name: Install 
           command: |
