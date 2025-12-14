@@ -1,6 +1,27 @@
 version: 2.1 #reopen
 
+orbs:
+  slack: circleci/slack@4.9.3
+
 jobs:
+  notify:
+    docker:
+      - image: cimg/base:current
+    steps:
+      - slack/notify:
+          custom: |
+            {
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "New CI/CD Generic *message* :art: for ${PACKAGE_NAME}"
+                  }
+                }
+              ]
+            }
+          event: always
   test:
     docker:
       - image: cimg/python:3.12.12
@@ -64,15 +85,16 @@ jobs:
 workflows:
   test-workflow:
     jobs:
+      notify
       # - test:
       #     filters:  # required since `deploy` has tag filters AND requires `build`
       #       tags:
       #         only: /.*/
-      - build_and_push:
-          # requires:
-          #   - test
-          filters: 
-            branches:
-              only: main
-            tags:
-              only: /^v.*/
+      # - build_and_push:
+      #     # requires:
+      #     #   - test
+      #     filters: 
+      #       branches:
+      #         only: main
+      #       tags:
+      #         only: /^v.*/
