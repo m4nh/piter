@@ -83,7 +83,7 @@ jobs:
 
       
 workflows:
-  test-workflow:
+  build-and-notify:
     jobs:
       - notify
 
