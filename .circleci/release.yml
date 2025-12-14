@@ -4,6 +4,21 @@ orbs:
   slack: circleci/slack@4.9.3
 
 jobs:
+  compute_version:
+    docker:
+      - image: cimg/python:3.12.12
+    steps:
+      - checkout
+      - run:
+          name: Compute Package Version
+          command: |
+            if [ -z "${PACKAGE_NAME:-}" ]; then
+              echo "PACKAGE_NAME is not set" >&2
+              exit 1
+            fi
+
+            PKG_VER=$(python -c "import importlib.metadata as m; print(m.version('${PACKAGE_NAME}'))")
+            echo "export PACKAGE_VERSION=${PKG_VER}" >> $BASH_ENV
   notify:
     docker:
       - image: cimg/base:current
@@ -16,7 +31,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "New CI/CD Generic *message* :art: for ${PACKAGE_NAME}"
+                    "text": "New CI/CD Generic *message* :art: for ${PACKAGE_NAME} -> *${PACKAGE_VERSION}* :tada:"
                   }
                 }
               ]
@@ -85,11 +100,17 @@ jobs:
 workflows:
   send-notification:
     jobs:
-      - notify:
-          context: slack-secrets
-          filters:  # required since `deploy` has tag filters AND requires `build`
+      - compute_version:
+          filters: 
             tags:
               only: /v.*/
+      - notify:
+          context: slack-secrets
+          filters:  
+            tags:
+              only: /v.*/
+          requires:
+            - compute_version
 
 
 # - test:
