@@ -65,7 +65,7 @@ jobs:
           name: Read Package Version
           command: |
             export VERSION=$(cat package_version.txt)
-            echo "PACKAGE_VERSION=${VERSION}" >> $BASH_ENV
+            echo "IMAGE_TAG=${VERSION}" >> $BASH_ENV
       - setup_remote_docker
       - run:
           name: Build and Push Docker image
