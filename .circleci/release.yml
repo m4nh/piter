@@ -23,11 +23,22 @@ jobs:
             fi
 
             PKG_VER=$(python -c "import importlib.metadata as m; print(m.version('${PACKAGE_NAME}'))")
-            echo "export PACKAGE_VERSION=${PKG_VER}" >> $BASH_ENV
+            echo "${PKG_VER}" > package_version.txt
+      - persist_to_workspace:
+          root: .
+          paths:
+            - package_version.txt
   notify:
     docker:
       - image: cimg/base:current
     steps:
+      - attach_workspace:
+          at: .
+      - run:
+          name: Read Package Version
+          command: |
+            export VERSION=$(cat package_version.txt)
+            echo "PACKAGE_VERSION=${VERSION}" >> $BASH_ENV
       - slack/notify:
           custom: |
             {
