@@ -1,15 +1,24 @@
-version: 2.1 #reopen
+# CircleCI configuration used to cut releases from git tags that match /v.*/.
+# It computes the Python package version, runs tests with coverage, builds and pushes a Docker image,
+# and finally posts a Slack notification once everything succeeds.
+version: 2.1 
 
+# Import the official Slack orb to simplify sending notifications.
 orbs:
   slack: circleci/slack@4.9.3
 
 jobs:
+  # Reads the version of the Python package installed in editable mode and
+  # shares it with downstream jobs through the workspace.
   compute_version:
     docker:
       - image: cimg/python:3.12.12
     steps:
+      # Pull the repository contents into the job workspace.
       - checkout
       - run:
+          # Upgrade pip and install the project with test extras so the package
+          # metadata is available for version lookup.
           name: Install dependencies
           command: |
             python -m pip install --upgrade pip
@@ -17,66 +26,81 @@ jobs:
       - run:
           name: Compute Package Version
           command: |
+            # Validate that PACKAGE_NAME is provided by the pipeline context or trigger.
+            
             if [ -z "${PACKAGE_NAME:-}" ]; then
               echo "PACKAGE_NAME is not set" >&2
               exit 1
             fi
 
+            # Query the installed package metadata to extract the version string.
+            
             PKG_VER=$(python -c "import importlib.metadata as m; print(m.version('${PACKAGE_NAME}'))")
+            
+            # Persist the version to a file so later jobs can read it without recomputing.
+            
             echo "${PKG_VER}" > package_version.txt
       - persist_to_workspace:
+          # Expose the version file to other jobs in this workflow.
           root: .
           paths:
             - package_version.txt
   
+  # Executes the project's pytest suite with coverage enforcement to ensure quality gates are met
+  # before building and publishing images.
   test:
     docker:
       - image: cimg/python:3.12.12
     steps:
-      - run:
-          name: Check environment
-          command: |
-            if [ -z "${PACKAGE_NAME:-}" ]; then
-              echo "PACKAGE_NAME is not set" >&2
-              exit 1
-            fi
       - checkout
       - run:
           name: Install dependencies
           command: |
+            # Install the project with test dependencies for the test run.
             python -m pip install --upgrade pip
             pip install -e .[tests]
       - run:
           name: Run pytests with coverage
           command: | 
+            
+            # Create a directory where CircleCI can collect test artifacts.
             mkdir test-results
+            
+            # Run tests, enforce minimum coverage, and emit JUnit XML for visibility in CI.
             pytest --cov=${PACKAGE_NAME} --cov-fail-under=80 --junitxml=test-results/junit.xml
   build_and_push:
     docker:
       - image: cimg/python:3.12.12
     steps:
+      - attach_workspace:
+          at: .
       - checkout
       - run:
           name: Install 
           command: |
+            # Install the package (without test extras) to prepare the Docker build context.
             python -m pip install --upgrade pip
             pip install -e .
       - run:
           name: Read Package Version
           command: |
+            # Load the package version computed in the first job and export it for later steps.
             export VERSION=$(cat package_version.txt)
             echo "IMAGE_TAG=${VERSION}" >> $BASH_ENV
       - setup_remote_docker
       - run:
           name: Build and Push Docker image
           command: |
+            # Load exported environment variables for this shell session.
             source $BASH_ENV
 
+            # Ensure Docker Hub credentials and image prefix are available; otherwise fail early.
             if [ -z "${DOCKERHUB_USERNAME:-}" ] || [ -z "${DOCKERHUB_PASSWORD:-}" ] || [ -z "${DOCKER_PREFIX:-}" ]; then
               echo "Docker Hub credentials are not set" >&2
               exit 1
             fi
 
+            # Compose the full image name using the prefix, package name, and version tag.
             IMAGE="${DOCKER_PREFIX}/${PACKAGE_NAME}:${IMAGE_TAG}"
 
             echo "Logging into Docker Hub as ${DOCKERHUB_USERNAME}"
@@ -88,8 +112,10 @@ jobs:
             echo "Pushing ${IMAGE}"
             docker push "${IMAGE}"
 
+            # Store the pushed image reference for the notification step.
             echo ${IMAGE} > docker_image.txt
       - persist_to_workspace:
+          # Share the image reference with downstream jobs.
           root: .
           paths:
             - docker_image.txt
@@ -98,6 +124,7 @@ jobs:
       - image: cimg/base:current
     steps:
       - attach_workspace:
+          # Pull in the version and image info produced by earlier jobs.
           at: .
       - run:
           name: Read Package Version
@@ -107,6 +134,7 @@ jobs:
             echo "PACKAGE_VERSION=${VERSION}" >> $BASH_ENV
             echo "DOCKER_IMAGE=${DOCKER_IMAGE}" >> $BASH_ENV
       - slack/notify:
+          # Send a Slack message even on failure, summarizing the new version and Docker image.
           custom: |
             {
               "blocks": [
@@ -125,16 +153,19 @@ workflows:
   send-notification:
     jobs:
       - compute_version:
+          # Trigger only on git tags that start with v (e.g., v1.2.3) to avoid running on every commit.
           filters: 
             tags:
               only: /v.*/
       - test:
+          # Run tests after computing the version; only for version tags.
           filters:  
             tags:
               only: /v.*/
           requires:
             - compute_version
       - build_and_push:
+          # Build and publish the Docker image only after tests succeed; still only for version tags.
           filters:  
             tags:
               only: /v.*/
@@ -142,22 +173,10 @@ workflows:
             - test
       - notify:
           context: slack-secrets
+          # Always send a Slack notification at the end, using secrets from the specified context.
           filters:  
             tags:
               only: /v.*/
           requires:
             - build_and_push
 
-
-# - test:
-#     filters:  # required since `deploy` has tag filters AND requires `build`
-#       tags:
-#         only: /.*/
-# - build_and_push:
-#     # requires:
-#     #   - test
-#     filters: 
-#       branches:
-#         only: main
-#       tags:
-#         only: /^v.*/
