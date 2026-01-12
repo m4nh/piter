@@ -1,0 +1,50 @@
+name: "Publish wheel to Azure Artifacts"
+description: "Build a Python wheel and upload it to an Azure Artifacts PyPI feed"
+
+inputs:
+  python-version:
+    description: "Python version used to build the wheel"
+    required: false
+    default: "3.12"
+  package-dir:
+    description: "Directory containing pyproject.toml"
+    required: false
+    default: "."
+  artifacts-pypi-url:
+    description: "Azure Artifacts PyPI upload URL (repository-url for twine)"
+    required: true
+  artifacts-pat:
+    description: "Azure DevOps PAT with Packaging (Write) permissions"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set up Python ${{ inputs.python-version }}
+      uses: actions/setup-python@v6
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: Install build tools
+      shell: bash
+      working-directory: ${{ inputs.package-dir }}
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install --upgrade build twine
+
+    - name: Build wheel
+      shell: bash
+      working-directory: ${{ inputs.package-dir }}
+      run: |
+        rm -rf dist
+        python -m build --wheel
+        python -m twine check dist/*
+
+    - name: Upload wheel to Azure Artifacts
+      shell: bash
+      working-directory: ${{ inputs.package-dir }}
+      env:
+        TWINE_USERNAME: __token__
+        TWINE_PASSWORD: ${{ inputs.artifacts-pat }}
+      run: |
+        python -m twine upload --repository-url "${{ inputs.artifacts-pypi-url }}" dist/*

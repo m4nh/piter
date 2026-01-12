@@ -1,0 +1,17 @@
+name: "Python tests"
+description: "Install dependencies and run pytest"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install dependencies
+      shell: bash
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install flake8 pytest pytest-cov
+        python -m pip install -e .
+
+    - name: Test with pytest
+      shell: bash
+      run: |
+        pytest
