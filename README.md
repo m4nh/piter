@@ -1,8 +1,8 @@
-# PITER - PIpelime TEmplate Rendering
+# PITER - PIpelime TEmplate Rendering 
 
 <img src='docs/images/logo.jpg' height=256 />
 
-PIPELIME -> HTML Pages
+Create stunning interactive HTML reports from Pipelime datasets with minimal effort.
 
 ## Installation
 
