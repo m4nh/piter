@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "piter"
+name = "eyecan-piter"
 authors = [{ name = "Eyecan.ai", email = "daniele.degregorio@eyecan.ai" }]
 description = "PITER: PIpelime TEmplate Renderer"
 readme = "README.md"
@@ -24,7 +24,13 @@ classifiers = [
   "Topic :: Software Development",
 ]
 keywords = ["pipelime", "data", "html", "template", "images"]
-dependencies = ["pipelime-python>=1.4.1,!=1.6.1", "jinja2", "colour", "imageio", "pydantic-settings"]
+dependencies = [
+  "pipelime-python>=1.4.1,!=1.6.1",
+  "jinja2",
+  "colour",
+  "imageio",
+  "pydantic-settings",
+]
 dynamic = ["version"]
 
 [project.optional-dependencies]
@@ -43,3 +49,6 @@ piter = "piter.cli.cli:piter"
 
 [tool.hatch.version]
 path = "piter/__init__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["piter"]
