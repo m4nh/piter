@@ -173,3 +173,86 @@ def test_images_clusters_simple_command_writes_html(tmp_path, monkeypatch):
     assert output_file.exists()
     html = output_file.read_text()
     assert str(img1) in html and str(img2) in html
+
+
+def test_anomaly_interactive_simple_command_writes_html(tmp_path, monkeypatch):
+    img1 = tmp_path / "img1.png"
+    Image.new("RGB", (2, 2), "blue").save(img1)
+    heat1 = tmp_path / "heat1.png"
+    Image.new("RGB", (2, 2), "red").save(heat1)
+
+    class DummyImage:
+        def __init__(self, path: Path):
+            self.local_sources = [path]
+
+        def __call__(self):
+            return None
+
+    class DummyMetadata:
+        def __init__(self, payload):
+            self._payload = payload
+
+        def __call__(self):
+            return self._payload
+
+    class DummySequence:
+        def __init__(self, samples):
+            self.samples = samples
+
+        def __len__(self):
+            return len(self.samples)
+
+        def __iter__(self):
+            return iter(self.samples)
+
+        def __getitem__(self, idx):
+            return self.samples[idx]
+
+    dataset = [
+        {
+            "image": DummyImage(img1),
+            "colored_heatmap": DummyImage(heat1),
+            "debug_metadata": DummyMetadata(
+                {
+                    "sample_score": 12.34,
+                    "heatmap_bounds": [0.1, 12.34],
+                }
+            ),
+            "metadata": DummyMetadata(
+                {
+                    "sample_id": "sample-1",
+                    "dataset_id": "set-a",
+                    "original_filename": "image-a.png",
+                }
+            ),
+        }
+    ]
+
+    monkeypatch.setattr(pli_items, "JpegImageItem", DummyImage)
+    monkeypatch.setattr(pli_items, "BmpImageItem", DummyImage)
+    monkeypatch.setattr(pli_items, "PngImageItem", DummyImage)
+
+    monkeypatch.setattr(
+        pls_sequences.SamplesSequence,
+        "from_underfolder",
+        staticmethod(lambda _folder: DummySequence(dataset)),
+    )
+    monkeypatch.setattr(cli_module, "_is_valid_image", lambda _item: True)
+
+    output_file = tmp_path / "anomaly.html"
+    result = runner.invoke(
+        piter,
+        [
+            "anomaly_interactive_simple",
+            "--folder",
+            str(tmp_path),
+            "--output-file",
+            str(output_file),
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert output_file.exists()
+    html = output_file.read_text()
+    assert "image-a.png" in html
+    assert str(img1) in html and str(heat1) in html

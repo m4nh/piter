@@ -220,7 +220,7 @@ def images_clusters_simple(
 
         if label not in colors:
             if len(color_key) > 0:
-                color = sample[color_item]()[color_subitem]
+                color = sample[color_item]()[color_subitem]  # type: ignore
                 colors[label] = color_rgb_to_hex(color)
             else:
                 colors[label] = label_to_color(label, format="hex")
@@ -238,6 +238,126 @@ def images_clusters_simple(
             title=title,
             images_clusters=clusters,
             labels_colors=colors,
+        )
+    )
+
+    if output_file:
+        with open(output_file, "w") as f:
+            f.write(output)
+        print(f"HTML file saved at {output_file}")
+    else:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".html", delete=False) as f:
+            f.write(output)
+            print(f"HTML file saved at {f.name}")
+
+
+@piter.command("anomaly_interactive_simple", context_settings=context_settings)
+def anomaly_interactive_simple(
+    title: str = typer.Option(
+        "Anomaly Interactive", help="The title of the generated HTML file"
+    ),
+    folder: Path = typer.Option(
+        ..., help="The path to the folder containing the samples"
+    ),
+    image_key: str = typer.Option(
+        "image", help="The key to identify the original image in the dataset"
+    ),
+    heatmap_key: str = typer.Option(
+        "colored_heatmap", help="The key to identify the colored heatmap"
+    ),
+    debug_metadata_key: str = typer.Option(
+        "debug_metadata", help="The key to identify anomaly scores metadata"
+    ),
+    metadata_key: str = typer.Option(
+        "metadata", help="The key to identify sample metadata"
+    ),
+    embed: bool = typer.Option(
+        False, help="Whether to embed images directly in the HTML file"
+    ),
+    embed_quality: int = typer.Option(
+        50, help="The quality of embedded images (0-100)"
+    ),
+    output_file: str = typer.Option(
+        "",
+        help="The path to save the generated HTML file. If not provided, a temporary file will be created",
+    ),
+) -> None:
+    from piter.renderers.html import (
+        AnomalyInteractiveSample,
+        AnomalyInteractiveSimple,
+        AnomalyInteractiveSimpleParams,
+    )
+    from piter.utils.images import image_file_to_base64_url
+    import tempfile
+    import pipelime.sequences as pls
+    import pipelime.items as pli
+    from rich.progress import track
+
+    dataset = pls.SamplesSequence.from_underfolder(folder)
+
+    if len(dataset) == 0:
+        print("No samples found in the folder")
+        return
+
+    def get_image_url(item: pli.ImageItem):
+        if not embed:
+            return str(item.local_sources[0])
+        return image_file_to_base64_url(item.local_sources[0], embed_quality)
+
+    def get_metadata(sample, key: str) -> t.Dict[str, t.Any]:
+        if key not in sample:
+            return {}
+        item = sample[key]
+        if isinstance(item, pli.MetadataItem):
+            return item()
+        if callable(item):
+            return item()
+        if isinstance(item, dict):
+            return item
+        return {}
+
+    samples = []
+    for idx, sample in enumerate(
+        track(dataset, total=len(dataset), description="Processing")
+    ):
+        if image_key not in sample or heatmap_key not in sample:
+            continue
+        if not _is_valid_image(sample[image_key]) or not _is_valid_image(
+            sample[heatmap_key]
+        ):
+            continue
+
+        debug_metadata = get_metadata(sample, debug_metadata_key)
+        metadata = get_metadata(sample, metadata_key)
+
+        sample_score = float(debug_metadata.get("sample_score", 0.0))
+        heatmap_bounds = debug_metadata.get("heatmap_bounds", [0.0, sample_score])
+        if not isinstance(heatmap_bounds, list) or len(heatmap_bounds) != 2:
+            heatmap_bounds = [0.0, sample_score]
+
+        sample_id = str(metadata.get("sample_id", ""))
+        dataset_id = str(metadata.get("dataset_id", ""))
+        original_filename = str(metadata.get("original_filename", ""))
+        file_id = original_filename or sample_id or str(idx)
+
+        samples.append(
+            AnomalyInteractiveSample(
+                image_path=get_image_url(sample[image_key]),
+                heatmap_path=get_image_url(sample[heatmap_key]),
+                sample_score=sample_score,
+                heatmap_bounds=heatmap_bounds,
+                sample_id=sample_id,
+                dataset_id=dataset_id,
+                original_filename=original_filename,
+                file_id=file_id,
+            )
+        )
+
+    renderer = AnomalyInteractiveSimple()
+    output = renderer.render(
+        AnomalyInteractiveSimpleParams(
+            title=title,
+            samples=samples,
         )
     )
 

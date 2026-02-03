@@ -1,0 +1,619 @@
+{% extends "_base.html" %} {% block user_script %}
+<script lang="javascript">
+  let imageScale = 1.0;
+
+  function updateImageScale() {
+    document.querySelectorAll(".image-compare-container").forEach((el) => {
+      el.style.transform = `scale(${imageScale})`;
+      el.style.transformOrigin = "center center";
+    });
+  }
+
+  function zoomIn() {
+    imageScale = Math.min(imageScale + 0.1, 2.0);
+    updateImageScale();
+  }
+
+  function zoomOut() {
+    imageScale = Math.max(imageScale - 0.1, 0.5);
+    updateImageScale();
+  }
+
+  function resetZoom() {
+    imageScale = 1.0;
+    updateImageScale();
+  }
+</script>
+{% endblock user_script %} {% block body %}
+
+<!-- Fixed Bottom Control Bar -->
+<div
+  class="fixed bottom-0 left-0 right-0 z-50 bg-base-200/95 backdrop-blur-sm shadow-[0_-4px_16px_rgba(0,0,0,0.1)] border-t border-base-300"
+>
+  <div
+    class="flex flex-wrap items-center justify-between gap-2 p-2 px-4 max-w-screen-2xl mx-auto"
+  >
+    <!-- Stats -->
+    <div class="flex items-center gap-3">
+      <div class="flex items-center gap-2 text-sm">
+        <span class="opacity-60">Samples:</span>
+        <span class="font-mono font-bold" id="total-count"
+          >{{ samples|length }}</span
+        >
+      </div>
+      <div class="divider divider-horizontal mx-0 h-6"></div>
+      <div class="flex items-center gap-2 text-sm">
+        <span class="opacity-60">Anomalies:</span>
+        <span class="font-mono font-bold text-error" id="anomaly-count">—</span>
+      </div>
+    </div>
+
+    <!-- Threshold Slider -->
+    <div class="flex items-center gap-2">
+      <label for="threshold-slider" class="text-xs opacity-70 hidden sm:inline">
+        🎚️ Threshold
+      </label>
+      <span class="text-xs opacity-60 font-mono" id="threshold-min">0</span>
+      <input
+        type="range"
+        id="threshold-slider"
+        class="range range-xs range-primary w-24 sm:w-32"
+        min="0"
+        max="100"
+        value="50"
+      />
+      <span class="text-xs opacity-60 font-mono" id="threshold-max">100</span>
+      <span class="badge badge-sm badge-primary font-mono" id="threshold-value"
+        >50.0</span
+      >
+    </div>
+
+    <!-- Sort -->
+    <div class="flex items-center gap-2">
+      <label for="sort-select" class="text-xs opacity-70 hidden sm:inline"
+        >Sort</label
+      >
+      <select id="sort-select" class="select select-bordered select-xs">
+        <option value="score-desc">Score ↓</option>
+        <option value="score-asc">Score ↑</option>
+        <option value="id-asc">ID A→Z</option>
+        <option value="id-desc">ID Z→A</option>
+      </select>
+    </div>
+
+    <!-- Zoom Controls -->
+    <div class="flex items-center gap-1">
+      <button class="btn btn-xs btn-ghost" onclick="zoomOut()">🔍−</button>
+      <button class="btn btn-xs btn-ghost" onclick="resetZoom()">⟲</button>
+      <button class="btn btn-xs btn-ghost" onclick="zoomIn()">🔍+</button>
+    </div>
+  </div>
+</div>
+
+<div class="flex flex-col gap-4 min-h-screen w-full pb-16">
+  <div class="grid grid-cols-1 gap-4 lg:grid-cols-[280px_1fr] flex-1">
+    <aside
+      class="lg:sticky lg:top-4 h-fit max-h-[50vh] lg:max-h-[calc(100vh-10rem)] overflow-y-auto pr-1 order-2 lg:order-1"
+      id="sidebar"
+    >
+      <div
+        class="flex flex-row lg:flex-col gap-3 px-2 pt-2 overflow-x-auto lg:overflow-x-visible pb-2 lg:pb-0"
+      >
+        {% for sample in samples %}
+        <div
+          class="mini-card card card-compact bg-base-100 cursor-pointer transition-all duration-200 flex-shrink-0 w-40 lg:w-full overflow-hidden"
+          data-index="{{ loop.index0 }}"
+          data-score="{{ sample.sample_score }}"
+          data-id="{{ sample.file_id }}"
+        >
+          <figure class="relative px-1 pt-1">
+            <img
+              src="{{ sample.image_path }}"
+              alt="Sample {{ sample.file_id }}"
+              class="mini-card-image h-24 lg:h-28 w-full rounded-md object-contain transition-all duration-200 bg-neutral-950"
+              data-score="{{ sample.sample_score }}"
+              loading="lazy"
+            />
+            <!-- Score indicator bar -->
+            <div
+              class="score-indicator absolute bottom-0 left-1 right-1 h-1 rounded-full transition-colors duration-200"
+              data-score="{{ sample.sample_score }}"
+            ></div>
+          </figure>
+          <div class="card-body pt-2 pb-2">
+            <div class="mini-card-info flex items-center justify-between gap-1">
+              <span class="mini-card-id font-mono text-xs opacity-70 truncate"
+                >#{{ sample.file_id }}</span
+              >
+              <span
+                class="score-badge badge badge-sm"
+                data-score="{{ sample.sample_score }}"
+              >
+                {{ "%.1f"|format(sample.sample_score) }}
+              </span>
+            </div>
+          </div>
+          <!-- Selection indicator -->
+          <div
+            class="selection-glow absolute inset-0 rounded-xl pointer-events-none opacity-0 transition-opacity duration-200"
+          ></div>
+        </div>
+        {% endfor %}
+      </div>
+    </aside>
+
+    <main class="flex flex-col gap-4 order-1 lg:order-2 min-w-0">
+      <div class="flex flex-col gap-3">
+        <div class="overflow-hidden rounded-box bg-base-100 shadow-xl w-full">
+          <div
+            class="carousel-track flex transition-transform duration-300 ease-out"
+            id="carousel-track"
+          >
+            {% for sample in samples %}
+            <div
+              class="carousel-slide w-full shrink-0 p-3 md:p-4 flex flex-col gap-4 opacity-0 transition-opacity duration-200"
+              data-index="{{ loop.index0 }}"
+              data-id="{{ sample.file_id }}"
+            >
+              <div
+                class="image-compare-container relative h-64 sm:h-72 md:h-80 lg:h-[28rem] rounded-box bg-base-200 shadow-lg overflow-hidden"
+              >
+                <div
+                  class="image-compare relative h-full w-full"
+                  data-index="{{ loop.index0 }}"
+                >
+                  <img
+                    src="{{ sample.image_path }}"
+                    alt="Original"
+                    class="image-base absolute inset-0 h-full w-full object-contain"
+                  />
+                  <img
+                    src="{{ sample.heatmap_path }}"
+                    alt="Heatmap"
+                    class="image-overlay absolute inset-0 h-full w-full object-contain"
+                    style="clip-path: inset(0 50% 0 0)"
+                  />
+                  <div
+                    class="compare-slider absolute top-0 bottom-0 w-1 bg-primary cursor-ew-resize"
+                    style="left: 50%"
+                  >
+                    <div
+                      class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-primary text-primary-content flex items-center justify-center text-xs shadow"
+                    >
+                      ⟷
+                    </div>
+                  </div>
+                  <div
+                    class="image-labels absolute bottom-2 left-2 right-2 flex justify-between pointer-events-none"
+                  >
+                    <span class="badge badge-neutral shadow-lg">Original</span>
+                    <span class="badge badge-neutral shadow-lg"
+                      >Anomaly Map</span
+                    >
+                  </div>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+                <div class="card bg-base-200 shadow-sm">
+                  <div class="card-body p-2 sm:p-3">
+                    <div class="text-[10px] sm:text-xs uppercase opacity-60">
+                      Anomaly Score
+                    </div>
+                    <div
+                      class="metadata-value score font-mono text-base sm:text-lg font-bold"
+                      data-score="{{ sample.sample_score }}"
+                    >
+                      {{ "%.2f"|format(sample.sample_score) }}
+                    </div>
+                  </div>
+                </div>
+                <div class="card bg-base-200 shadow-sm">
+                  <div class="card-body p-2 sm:p-3">
+                    <div class="text-[10px] sm:text-xs uppercase opacity-60">
+                      Sample ID
+                    </div>
+                    <div
+                      class="font-mono text-xs sm:text-sm truncate"
+                      title="{{ sample.sample_id }}"
+                    >
+                      {{ sample.sample_id[:12] }}...
+                    </div>
+                  </div>
+                </div>
+                <div class="card bg-base-200 shadow-sm">
+                  <div class="card-body p-2 sm:p-3">
+                    <div class="text-[10px] sm:text-xs uppercase opacity-60">
+                      Dataset
+                    </div>
+                    <div class="font-mono text-xs sm:text-sm truncate">
+                      {{ sample.dataset_id }}
+                    </div>
+                  </div>
+                </div>
+                <div class="card bg-base-200 shadow-sm">
+                  <div class="card-body p-2 sm:p-3">
+                    <div class="text-[10px] sm:text-xs uppercase opacity-60">
+                      Original File
+                    </div>
+                    <div
+                      class="font-mono text-xs sm:text-sm truncate"
+                      title="{{ sample.original_filename }}"
+                    >
+                      {{ sample.original_filename }}
+                    </div>
+                  </div>
+                </div>
+                <div
+                  class="card bg-base-200 shadow-sm col-span-2 sm:col-span-1"
+                >
+                  <div class="card-body p-2 sm:p-3">
+                    <div class="text-[10px] sm:text-xs uppercase opacity-60">
+                      Heatmap Bounds
+                    </div>
+                    <div class="font-mono text-xs sm:text-sm">
+                      [{{ "%.1f"|format(sample.heatmap_bounds[0]) }}, {{
+                      "%.1f"|format(sample.heatmap_bounds[1]) }}]
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <!-- Navigation Controls - Moved below carousel -->
+        <div
+          class="flex items-center justify-center gap-4 py-3 px-2 bg-base-200 rounded-box shadow"
+        >
+          <button
+            class="btn btn-circle btn-primary btn-sm md:btn-md shadow-lg"
+            id="prev-btn"
+            aria-label="Previous"
+          >
+            ‹
+          </button>
+
+          <div
+            class="carousel-progress flex flex-wrap justify-center gap-1 sm:gap-2 max-w-md"
+            id="carousel-progress"
+          >
+            {% for sample in samples %}
+            <button
+              class="progress-dot btn btn-xs btn-circle transition-all"
+              data-index="{{ loop.index0 }}"
+              aria-label="Go to slide {{ loop.index }}"
+            ></button>
+            {% endfor %}
+          </div>
+
+          <button
+            class="btn btn-circle btn-primary btn-sm md:btn-md shadow-lg"
+            id="next-btn"
+            aria-label="Next"
+          >
+            ›
+          </button>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script>
+  // Sample scores data from Jinja
+  const sampleScores = [
+    {% for sample in samples %}{{ sample.sample_score }}{% if not loop.last %}, {% endif %}{% endfor %}
+  ];
+
+  // Calculate score statistics
+  const minScore = Math.min(...sampleScores);
+  const maxScore = Math.max(...sampleScores);
+  const sortedScores = [...sampleScores].sort((a, b) => a - b);
+  const percentile90Index = Math.floor(sortedScores.length * 0.9);
+  const percentile90 = sortedScores[Math.min(percentile90Index, sortedScores.length - 1)];
+
+  // Threshold state
+  let anomalyThreshold = percentile90;
+
+  // Initialize threshold slider
+  const thresholdSlider = document.getElementById('threshold-slider');
+  const thresholdValue = document.getElementById('threshold-value');
+  const thresholdMin = document.getElementById('threshold-min');
+  const thresholdMax = document.getElementById('threshold-max');
+  const anomalyCountEl = document.getElementById('anomaly-count');
+
+  // Set slider bounds based on data
+  thresholdSlider.min = minScore.toFixed(1);
+  thresholdSlider.max = maxScore.toFixed(1);
+  thresholdSlider.step = ((maxScore - minScore) / 100).toFixed(2);
+  thresholdSlider.value = anomalyThreshold.toFixed(1);
+  thresholdMin.textContent = minScore.toFixed(1);
+  thresholdMax.textContent = maxScore.toFixed(1);
+  thresholdValue.textContent = anomalyThreshold.toFixed(1);
+
+  // Function to get score class based on threshold
+  function getScoreClass(score) {
+    const range = maxScore - minScore;
+    const lowThreshold = minScore + range * 0.33;
+    const midThreshold = anomalyThreshold;
+
+    if (score >= midThreshold) return 'score-high';
+    if (score >= lowThreshold) return 'score-medium';
+    return 'score-low';
+  }
+
+  // Function to update all score styling based on current threshold
+  function updateScoreStyling() {
+    const allScoreBadges = document.querySelectorAll('[data-score]');
+
+    allScoreBadges.forEach((el) => {
+      const score = parseFloat(el.dataset.score);
+      const isBadge = el.classList.contains('badge') || el.classList.contains('score-badge');
+      const isImage = el.classList.contains('mini-card-image');
+      const isIndicator = el.classList.contains('score-indicator');
+
+      // Remove old classes
+      el.classList.remove(
+        'badge-success',
+        'badge-warning',
+        'badge-error',
+        'text-success',
+        'text-warning',
+        'text-error',
+        'shadow-success',
+        'shadow-warning',
+        'shadow-error',
+        'bg-success',
+        'bg-warning',
+        'bg-error',
+      );
+      // Remove inline shadow styles
+      el.style.boxShadow = '';
+
+      let styleClass = 'success';
+      let shadowColor = 'rgba(34, 197, 94, 0.6)'; // green
+      if (score >= anomalyThreshold) {
+        styleClass = 'error';
+        shadowColor = 'rgba(239, 68, 68, 0.6)'; // red
+      } else {
+        const range = maxScore - minScore;
+        const lowThreshold = minScore + range * 0.5;
+        if (score >= lowThreshold) {
+          styleClass = 'warning';
+          shadowColor = 'rgba(234, 179, 8, 0.6)'; // yellow
+        }
+      }
+
+      if (isBadge) {
+        el.classList.add(`badge-${styleClass}`);
+      } else if (isImage) {
+        // Apply colored shadow to mini-card images
+        // el.style.boxShadow = `0 4px 12px ${shadowColor}, 0 2px 4px ${shadowColor}`;
+      } else if (isIndicator) {
+        // Color the score indicator bar
+        el.classList.add(`bg-${styleClass}`);
+      } else {
+        el.classList.add(`text-${styleClass}`);
+      }
+    });
+
+    // Count anomalies from the original scores array (one per sample)
+    const anomalyCount = sampleScores.filter(score => score >= anomalyThreshold).length;
+    anomalyCountEl.textContent = anomalyCount;
+  }
+
+  // Threshold slider event listener
+  thresholdSlider.addEventListener('input', (e) => {
+    anomalyThreshold = parseFloat(e.target.value);
+    thresholdValue.textContent = anomalyThreshold.toFixed(1);
+    updateScoreStyling();
+  });
+
+  // Initialize score styling
+  updateScoreStyling();
+
+  // Carousel State
+  let currentIndex = 0;
+  let totalSlides = document.querySelectorAll(".carousel-slide").length;
+
+  // DOM Elements
+  const track = document.getElementById("carousel-track");
+  const prevBtn = document.getElementById("prev-btn");
+  const nextBtn = document.getElementById("next-btn");
+  const miniCards = document.querySelectorAll(".mini-card");
+  const progressDots = document.querySelectorAll(".progress-dot");
+  const slides = document.querySelectorAll(".carousel-slide");
+  const sortSelect = document.getElementById("sort-select");
+
+  // Navigate to specific slide
+  function goToSlide(index) {
+    if (index < 0 || index >= totalSlides) return;
+
+    currentIndex = index;
+
+    // Move carousel track
+    track.style.transform = `translateX(-${currentIndex * 100}%)`;
+
+    // Update active states
+    miniCards.forEach((card) => {
+      const isActive = parseInt(card.dataset.index) === currentIndex;
+      // Better selection: use background highlight and scale instead of ring
+      card.classList.toggle('bg-primary/10', isActive);
+      card.classList.toggle('scale-[1.02]', isActive);
+      card.classList.toggle('shadow-lg', isActive);
+      card.classList.toggle('shadow-primary/30', isActive);
+      card.classList.toggle('z-10', isActive);
+      // Add a nice border glow effect
+      if (isActive) {
+        card.style.boxShadow = '0 0 0 2px oklch(var(--p)), 0 4px 16px rgba(0,0,0,0.15)';
+      } else {
+        card.style.boxShadow = '';
+      }
+    });
+
+    progressDots.forEach((dot) => {
+      const isActive = parseInt(dot.dataset.index) === currentIndex;
+      dot.classList.toggle('btn-primary', isActive);
+      dot.classList.toggle('btn-outline', !isActive);
+      dot.classList.toggle('opacity-50', !isActive);
+    });
+
+    slides.forEach((slide) => {
+      const isActive = parseInt(slide.dataset.index) === currentIndex;
+      slide.classList.toggle('opacity-100', isActive);
+      slide.classList.toggle('opacity-0', !isActive);
+    });
+
+    // Scroll active mini-card into view
+    const activeCard = document.querySelector(
+      `.mini-card[data-index="${currentIndex}"]`,
+    );
+    if (activeCard) {
+      activeCard.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+
+    // Update button states
+    prevBtn.disabled = currentIndex === 0;
+    nextBtn.disabled = currentIndex === totalSlides - 1;
+  }
+
+  // Event Listeners
+  prevBtn.addEventListener("click", () => goToSlide(currentIndex - 1));
+  nextBtn.addEventListener("click", () => goToSlide(currentIndex + 1));
+
+  miniCards.forEach((card) => {
+    card.addEventListener("click", () => {
+      goToSlide(parseInt(card.dataset.index));
+    });
+  });
+
+  progressDots.forEach((dot) => {
+    dot.addEventListener("click", () => {
+      goToSlide(parseInt(dot.dataset.index));
+    });
+  });
+
+  // Keyboard navigation
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowLeft") goToSlide(currentIndex - 1);
+    if (e.key === "ArrowRight") goToSlide(currentIndex + 1);
+  });
+
+  // Image Comparison Slider
+  document.querySelectorAll(".image-compare").forEach((container) => {
+    const slider = container.querySelector(".compare-slider");
+    const overlay = container.querySelector(".image-overlay");
+    let isDragging = false;
+
+    function updateSliderPosition(x) {
+      const rect = container.getBoundingClientRect();
+      let percentage = ((x - rect.left) / rect.width) * 100;
+      percentage = Math.max(0, Math.min(100, percentage));
+
+      slider.style.left = `${percentage}%`;
+      overlay.style.clipPath = `inset(0 ${100 - percentage}% 0 0)`;
+    }
+
+    slider.addEventListener("mousedown", (e) => {
+      isDragging = true;
+      e.preventDefault();
+    });
+
+    document.addEventListener("mousemove", (e) => {
+      if (!isDragging) return;
+      updateSliderPosition(e.clientX);
+    });
+
+    document.addEventListener("mouseup", () => {
+      isDragging = false;
+    });
+
+    // Touch support
+    slider.addEventListener("touchstart", (e) => {
+      isDragging = true;
+    });
+
+    document.addEventListener("touchmove", (e) => {
+      if (!isDragging) return;
+      updateSliderPosition(e.touches[0].clientX);
+    });
+
+    document.addEventListener("touchend", () => {
+      isDragging = false;
+    });
+
+    // Click to move slider
+    container.addEventListener("click", (e) => {
+      if (e.target === slider) return;
+      updateSliderPosition(e.clientX);
+    });
+  });
+
+  // Sorting functionality
+  sortSelect.addEventListener("change", () => {
+    const sortValue = sortSelect.value;
+    const sidebar = document.getElementById("sidebar");
+    const cardsArray = Array.from(miniCards);
+
+    cardsArray.sort((a, b) => {
+      const scoreA = parseFloat(a.dataset.score);
+      const scoreB = parseFloat(b.dataset.score);
+      const idA = a.dataset.id;
+      const idB = b.dataset.id;
+
+      switch (sortValue) {
+        case "score-desc":
+          return scoreB - scoreA;
+        case "score-asc":
+          return scoreA - scoreB;
+        case "id-asc":
+          return idA.localeCompare(idB);
+        case "id-desc":
+          return idB.localeCompare(idA);
+        default:
+          return 0;
+      }
+    });
+
+    // Reorder cards in sidebar
+    cardsArray.forEach((card, i) => {
+      card.dataset.index = i;
+      sidebar.appendChild(card);
+    });
+
+    // Reorder slides in carousel
+    const slidesArray = Array.from(slides);
+    slidesArray.sort((a, b) => {
+      const cardA = document.querySelector(`.mini-card[data-id="${a.dataset.id}"]`);
+      const cardB = document.querySelector(`.mini-card[data-id="${b.dataset.id}"]`);
+      if (!cardA || !cardB) return 0;
+      return parseInt(cardA.dataset.index) - parseInt(cardB.dataset.index);
+    });
+
+    // Update slide indices and reorder
+    const trackEl = document.getElementById("carousel-track");
+    cardsArray.forEach((card, i) => {
+      const fileId = card.dataset.id;
+      const slide = document.querySelector(`.carousel-slide[data-id="${fileId}"]`);
+      if (slide) {
+        slide.dataset.index = i;
+        trackEl.appendChild(slide);
+      }
+    });
+
+    // Update progress dots
+    progressDots.forEach((dot, i) => {
+      dot.dataset.index = i;
+    });
+
+    // Go to first slide after sorting
+    currentIndex = 0;
+    goToSlide(0);
+  });
+
+  // Initialize
+  goToSlide(0);
+</script>
+{% endblock body %}

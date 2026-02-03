@@ -18,6 +18,7 @@ class GlobalParams(BaseSettings):
 class TemplatesCollection:
     IMAGES_TABLE_SIMPLE = "images_table_simple.html"
     IMAGES_CLUSTERS_SIMPLE = "images_clusters_simple.html"
+    ANOMALY_INTERACTIVE_SIMPLE = "anomaly_interactive.html"
 
 
 class _HasDict(t.Protocol):
@@ -64,3 +65,23 @@ class ImagesClustersSimpleParams(GlobalParams):
 
 class ImagesClustersSimple(HTMLRenderer[ImagesClustersSimpleParams]):
     template_path: str = TemplatesCollection.IMAGES_CLUSTERS_SIMPLE
+
+
+class AnomalyInteractiveSample(pyd.BaseModel):
+    image_path: str
+    heatmap_path: str
+    sample_score: float
+    heatmap_bounds: t.List[float]
+    sample_id: str
+    dataset_id: str
+    original_filename: str
+    file_id: str
+
+
+class AnomalyInteractiveSimpleParams(GlobalParams):
+    title: str = "Anomaly Interactive"
+    samples: t.List[AnomalyInteractiveSample]
+
+
+class AnomalyInteractiveSimple(HTMLRenderer[AnomalyInteractiveSimpleParams]):
+    template_path: str = TemplatesCollection.ANOMALY_INTERACTIVE_SIMPLE
