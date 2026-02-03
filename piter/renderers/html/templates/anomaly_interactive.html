@@ -68,6 +68,50 @@
       >
     </div>
 
+    <!-- Brightness / Contrast -->
+    <div class="flex items-center gap-3 flex-wrap">
+      <div class="flex items-center gap-2">
+        <label for="brightness-slider" class="text-xs opacity-70 hidden sm:inline">
+          🌞 Brightness
+        </label>
+        <input
+          type="range"
+          id="brightness-slider"
+          class="range range-xs range-accent w-20 sm:w-28"
+          min="50"
+          max="150"
+          value="100"
+        />
+        <span class="badge badge-sm badge-accent font-mono" id="brightness-value"
+          >100%</span
+        >
+      </div>
+      <div class="flex items-center gap-2">
+        <label for="contrast-slider" class="text-xs opacity-70 hidden sm:inline">
+          🌓 Contrast
+        </label>
+        <input
+          type="range"
+          id="contrast-slider"
+          class="range range-xs range-secondary w-20 sm:w-28"
+          min="50"
+          max="150"
+          value="100"
+        />
+        <span class="badge badge-sm badge-secondary font-mono" id="contrast-value"
+          >100%</span
+        >
+      </div>
+      <button
+        class="btn btn-xs btn-ghost"
+        id="image-reset-btn"
+        type="button"
+        aria-label="Reset image adjustments"
+      >
+        ⟲ Reset
+      </button>
+    </div>
+
     <!-- Sort -->
     <div class="flex items-center gap-2">
       <label for="sort-select" class="text-xs opacity-70 hidden sm:inline"
@@ -324,6 +368,26 @@
   const thresholdMax = document.getElementById('threshold-max');
   const anomalyCountEl = document.getElementById('anomaly-count');
 
+  // Brightness / Contrast controls (base image only)
+  const brightnessSlider = document.getElementById('brightness-slider');
+  const contrastSlider = document.getElementById('contrast-slider');
+  const brightnessValue = document.getElementById('brightness-value');
+  const contrastValue = document.getElementById('contrast-value');
+  const imageResetBtn = document.getElementById('image-reset-btn');
+  const defaultBrightness = 100;
+  const defaultContrast = 100;
+
+  function applyImageFilters() {
+    const brightness = parseInt(brightnessSlider.value, 10);
+    const contrast = parseInt(contrastSlider.value, 10);
+    brightnessValue.textContent = `${brightness}%`;
+    contrastValue.textContent = `${contrast}%`;
+    const filterValue = `brightness(${brightness}%) contrast(${contrast}%)`;
+    document.querySelectorAll('.image-base').forEach((img) => {
+      img.style.filter = filterValue;
+    });
+  }
+
   // Set slider bounds based on data
   thresholdSlider.min = minScore.toFixed(1);
   thresholdSlider.max = maxScore.toFixed(1);
@@ -411,8 +475,17 @@
     updateScoreStyling();
   });
 
+  brightnessSlider.addEventListener('input', applyImageFilters);
+  contrastSlider.addEventListener('input', applyImageFilters);
+  imageResetBtn.addEventListener('click', () => {
+    brightnessSlider.value = defaultBrightness;
+    contrastSlider.value = defaultContrast;
+    applyImageFilters();
+  });
+
   // Initialize score styling
   updateScoreStyling();
+  applyImageFilters();
 
   // Carousel State
   let currentIndex = 0;
