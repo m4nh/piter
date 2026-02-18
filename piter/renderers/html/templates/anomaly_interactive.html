@@ -166,14 +166,14 @@
           </figure>
           <div class="card-body pt-2 pb-2">
             <div class="mini-card-info flex items-center justify-between gap-1">
-              <span class="mini-card-id font-mono text-xs opacity-70 truncate"
+   <span class="mini-card-id font-mono text-xs opacity-70 truncate"
                 >#{{ sample.file_id }}</span
               >
               <span
                 class="score-badge badge badge-sm"
                 data-score="{{ sample.sample_score }}"
               >
-                {{ "%.1f"|format(sample.sample_score) }}
+                {{ "%.2f"|format(sample.sample_score) }}
               </span>
             </div>
           </div>
@@ -389,14 +389,13 @@
   }
 
   // Set slider bounds based on data
-  thresholdSlider.min = minScore.toFixed(1);
-  thresholdSlider.max = maxScore.toFixed(1);
-  thresholdSlider.step = ((maxScore - minScore) / 100).toFixed(2);
-  thresholdSlider.value = anomalyThreshold.toFixed(1);
-  thresholdMin.textContent = minScore.toFixed(1);
-  thresholdMax.textContent = maxScore.toFixed(1);
-  thresholdValue.textContent = anomalyThreshold.toFixed(1);
-
+  thresholdSlider.min = minScore.toFixed(2);
+  thresholdSlider.max = maxScore.toFixed(2);
+  thresholdSlider.step = ((maxScore - minScore) / 100).toFixed(4);
+  thresholdSlider.value = anomalyThreshold.toFixed(2);
+  thresholdMin.textContent = minScore.toFixed(2);
+  thresholdMax.textContent = maxScore.toFixed(2);
+  thresholdValue.textContent = anomalyThreshold.toFixed(2);
   // Function to get score class based on threshold
   function getScoreClass(score) {
     const range = maxScore - minScore;
@@ -471,7 +470,7 @@
   // Threshold slider event listener
   thresholdSlider.addEventListener('input', (e) => {
     anomalyThreshold = parseFloat(e.target.value);
-    thresholdValue.textContent = anomalyThreshold.toFixed(1);
+    thresholdValue.textContent = anomalyThreshold.toFixed(2);
     updateScoreStyling();
   });
 
