@@ -337,7 +337,9 @@ def anomaly_interactive_simple(
 
         sample_id = str(metadata.get("sample_id", ""))
         dataset_id = str(metadata.get("dataset_id", ""))
-        original_filename = str(metadata.get("original_filename", ""))
+        original_filename = (
+            dataset_id + "/" + str(metadata.get("original_filename", ""))
+        )
         file_id = original_filename or sample_id or str(idx)
 
         samples.append(
