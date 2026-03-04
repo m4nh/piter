@@ -119,7 +119,7 @@
       >
       <select id="sort-select" class="select select-bordered select-xs">
         <option value="score-desc">Score ↓</option>
-        <option value="score-asc">Score ↑</option>
+        <option value="score-asc" selected="selected">Score ↑</option>
         <option value="id-asc">ID A→Z</option>
         <option value="id-desc">ID Z→A</option>
       </select>
@@ -624,7 +624,7 @@
   });
 
   // Sorting functionality
-  sortSelect.addEventListener("change", () => {
+  function sortCards() {
     const sortValue = sortSelect.value;
     const sidebar = document.getElementById("sidebar");
     const cardsArray = Array.from(miniCards);
@@ -683,9 +683,12 @@
     // Go to first slide after sorting
     currentIndex = 0;
     goToSlide(0);
-  });
+  }
+
+  sortSelect.addEventListener("change", sortCards);
 
   // Initialize
   goToSlide(0);
+  sortCards();
 </script>
 {% endblock body %}
